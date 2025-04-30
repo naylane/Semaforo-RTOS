@@ -57,9 +57,9 @@ void vLedsTask() {
             gpio_put(LED_GREEN_PIN, 1);
             gpio_put(LED_RED_PIN, 1);
             for (int i = 0; i < TIME-2; i++) {
-                gpio_put(BUZZER_PIN, true);
+                //gpio_put(BUZZER_PIN, true);
                 vTaskDelay(pdMS_TO_TICKS(1000));
-                gpio_put(BUZZER_PIN, false);
+                //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(1000));
             }
             gpio_put(LED_GREEN_PIN, false);
@@ -68,9 +68,9 @@ void vLedsTask() {
             // Sinal verde
             gpio_put(LED_GREEN_PIN, true);
             for (int i = 0; i < TIME; i++) {
-                gpio_put(BUZZER_PIN, true);
+                //gpio_put(BUZZER_PIN, true);
                 vTaskDelay(pdMS_TO_TICKS(500));
-                gpio_put(BUZZER_PIN, false);
+                //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(500));
             }
             gpio_put(LED_GREEN_PIN, false);
@@ -79,9 +79,9 @@ void vLedsTask() {
             gpio_put(LED_GREEN_PIN, 1);
             gpio_put(LED_RED_PIN, 1);
             for (int i = 0; i < TIME*2; i++) {
-                gpio_put(BUZZER_PIN, true);
+                //gpio_put(BUZZER_PIN, true);
                 vTaskDelay(pdMS_TO_TICKS(250));
-                gpio_put(BUZZER_PIN, false);
+                //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(250));
             }
             gpio_put(LED_GREEN_PIN, false);
@@ -89,10 +89,10 @@ void vLedsTask() {
             
             // Sinal vermelho
             gpio_put(LED_RED_PIN, true);
-            for (int i = 0; i < TIME-2; i++){
-                gpio_put(BUZZER_PIN, true);
+            for (int i = 0; i < TIME/2; i++){
+                //gpio_put(BUZZER_PIN, true);
                 vTaskDelay(pdMS_TO_TICKS(500));
-                gpio_put(BUZZER_PIN, false);
+                //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(1500));
             }
             gpio_put(LED_RED_PIN, false);
@@ -108,10 +108,25 @@ void vMatrixTask() {
     pio_matrix_program_init(pio, sm, offset, WS2812_PIN);
     clear_matrix(pio, sm);
 
+    bool local_night_mode;
+    int count = 0;
+
+    sleep_ms(100);
     while (true) {
-        //set_led(2, 0, "verde");
-        //update_matrix(pio, sm);
-        //printf("Matriz de LEDs\n");
+        // Desativa interrupções e copia o valor de night_mode
+        taskENTER_CRITICAL();
+        local_night_mode = night_mode;
+        taskEXIT_CRITICAL();
+        
+        if (local_night_mode) {
+            clear_matrix(pio, sm);
+        } else {
+            if (count >= 10) {
+                count = 0;
+            }
+            set_pattern(pio, sm, count, "cinza");
+            count++;
+        }
         sleep_ms(1000);
     }
 }
