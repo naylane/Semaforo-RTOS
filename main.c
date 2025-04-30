@@ -45,38 +45,58 @@ void vLedsTask() {
     gpio_set_dir(BUZZER_PIN, GPIO_OUT);
     gpio_put(BUZZER_PIN, 0);
 
+    bool local_night_mode;
+
     while (true) {
-        // Sinal verde
-        gpio_put(LED_GREEN_PIN, true);
-        for (int i = 0; i < TIME; i++) {
-            gpio_put(BUZZER_PIN, true);
-            vTaskDelay(pdMS_TO_TICKS(500));
-            gpio_put(BUZZER_PIN, false);
-            vTaskDelay(pdMS_TO_TICKS(500));
-        }
-        gpio_put(LED_GREEN_PIN, false);
-        
-        // Sinal amarelo
-        gpio_put(LED_GREEN_PIN, 1);
-        gpio_put(LED_RED_PIN, 1);
-        for (int i = 0; i < TIME*2; i++) {
-            gpio_put(BUZZER_PIN, true);
-            vTaskDelay(pdMS_TO_TICKS(250));
-            gpio_put(BUZZER_PIN, false);
-            vTaskDelay(pdMS_TO_TICKS(250));
-        }
-        gpio_put(LED_GREEN_PIN, false);
-        gpio_put(LED_RED_PIN, false);
-        
-        // Sinal vermelho
-        gpio_put(LED_RED_PIN, true);
-        for (int i = 0; i < TIME-2; i++){
-            gpio_put(BUZZER_PIN, true);
-            vTaskDelay(pdMS_TO_TICKS(500));
-            gpio_put(BUZZER_PIN, false);
-            vTaskDelay(pdMS_TO_TICKS(1500));
-        }
-        gpio_put(LED_RED_PIN, false);
+        // Desativa interrupções e copia o valor de night_mode
+        taskENTER_CRITICAL();
+        local_night_mode = night_mode;
+        taskEXIT_CRITICAL();
+
+        if (local_night_mode) {
+            gpio_put(LED_GREEN_PIN, 1);
+            gpio_put(LED_RED_PIN, 1);
+            for (int i = 0; i < TIME-2; i++) {
+                gpio_put(BUZZER_PIN, true);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                gpio_put(BUZZER_PIN, false);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+            gpio_put(LED_GREEN_PIN, false);
+            gpio_put(LED_RED_PIN, false);
+        } else {
+            // Sinal verde
+            gpio_put(LED_GREEN_PIN, true);
+            for (int i = 0; i < TIME; i++) {
+                gpio_put(BUZZER_PIN, true);
+                vTaskDelay(pdMS_TO_TICKS(500));
+                gpio_put(BUZZER_PIN, false);
+                vTaskDelay(pdMS_TO_TICKS(500));
+            }
+            gpio_put(LED_GREEN_PIN, false);
+            
+            // Sinal amarelo
+            gpio_put(LED_GREEN_PIN, 1);
+            gpio_put(LED_RED_PIN, 1);
+            for (int i = 0; i < TIME*2; i++) {
+                gpio_put(BUZZER_PIN, true);
+                vTaskDelay(pdMS_TO_TICKS(250));
+                gpio_put(BUZZER_PIN, false);
+                vTaskDelay(pdMS_TO_TICKS(250));
+            }
+            gpio_put(LED_GREEN_PIN, false);
+            gpio_put(LED_RED_PIN, false);
+            
+            // Sinal vermelho
+            gpio_put(LED_RED_PIN, true);
+            for (int i = 0; i < TIME-2; i++){
+                gpio_put(BUZZER_PIN, true);
+                vTaskDelay(pdMS_TO_TICKS(500));
+                gpio_put(BUZZER_PIN, false);
+                vTaskDelay(pdMS_TO_TICKS(1500));
+            }
+            gpio_put(LED_RED_PIN, false);
+        }   
     }
 }
 
@@ -113,10 +133,12 @@ void vDisplayTask() {
     ssd1306_send_data(&ssd);
 
     char str_y[5]; // Buffer para armazenar a string
+    char str_n[5];
     int contador = 0;
     bool cor = true;
     while (true) {
         sprintf(str_y, "%d", contador); // Converte em string
+        sprintf(str_n, "%d", night_mode);
         contador++;                     // Incrementa o contador
         ssd1306_fill(&ssd, !cor);                          // Limpa o display
         ssd1306_rect(&ssd, 3, 3, 122, 60, cor, !cor);      // Desenha um retângulo
@@ -124,7 +146,8 @@ void vDisplayTask() {
         ssd1306_line(&ssd, 3, 37, 123, 37, cor);           // Desenha uma linha
         ssd1306_draw_string(&ssd, "CEPEDI   TIC37", 8, 6); // Desenha uma string
         ssd1306_draw_string(&ssd, "EMBARCATECH", 20, 16);  // Desenha uma string
-        ssd1306_draw_string(&ssd, "  FreeRTOS", 10, 28); // Desenha uma string
+        //ssd1306_draw_string(&ssd, "  FreeRTOS", 10, 28); // Desenha uma string
+        ssd1306_draw_string(&ssd, str_n, 10, 28); // Desenha uma string
         ssd1306_draw_string(&ssd, "Contador  LEDs", 10, 41);    // Desenha uma string
         ssd1306_draw_string(&ssd, str_y, 40, 52);          // Desenha uma string
         ssd1306_send_data(&ssd);                           // Atualiza o display
