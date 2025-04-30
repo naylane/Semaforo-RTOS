@@ -3,8 +3,11 @@
 #include "pico/bootrom.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
+#include "hardware/pio.h"
 #include "lib/ssd1306.h"
 #include "lib/font.h"
+#include "lib/ws2812.h"
+#include "ws2812.pio.h"
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
@@ -17,6 +20,8 @@
 #define LED_RED_PIN 13
 #define LED_GREEN_PIN 11
 
+#define WS2812_PIN 7
+
 #define BUZZER_PIN 10
 
 #define BUTTON_A 5
@@ -25,7 +30,7 @@
 static uint32_t last_time_A = 0;    // Tempo da última interrupção do botão A
 static uint32_t last_time_B = 0;    // Tempo da última interrupção do botão B
 
-#define TIME 5                      // Tempo para cada sinal em segundos
+#define TIME 10                      // Tempo para cada sinal em segundos
 
 bool night_mode = false;
 
@@ -76,10 +81,18 @@ void vLedsTask() {
 }
 
 void vMatrixTask() {
-    // configura
+    // Inicializa o PIO para controlar a matriz de LEDs (WS2812)
+    PIO pio = pio0;
+    uint sm = 0;
+    uint offset = pio_add_program(pio, &pio_matrix_program);
+    pio_matrix_program_init(pio, sm, offset, WS2812_PIN);
+    clear_matrix(pio, sm);
 
     while (true) {
-        // roda
+        //set_led(2, 0, "verde");
+        //update_matrix(pio, sm);
+        //printf("Matriz de LEDs\n");
+        sleep_ms(1000);
     }
 }
 
