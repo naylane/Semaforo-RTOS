@@ -15,8 +15,9 @@
 #define endereco 0x3C
 
 #define LED_RED_PIN 13
-#define LED_BLUE_PIN 12
 #define LED_GREEN_PIN 11
+
+#define BUZZER_PIN 10
 
 #define BUTTON_A 5
 #define BUTTON_B 6
@@ -26,25 +27,43 @@ static uint32_t last_time_B = 0;    // Tempo da última interrupção do botão 
 
 bool night_mode = false;
 
-void vBlinkLed1Task() {
+void vLeds1Task() {
+    gpio_init(LED_RED_PIN);
+    gpio_set_dir(LED_RED_PIN, GPIO_OUT);
+
     gpio_init(LED_GREEN_PIN);
     gpio_set_dir(LED_GREEN_PIN, GPIO_OUT);
+
     while (true) {
+        // CICLO VERDE
         gpio_put(LED_GREEN_PIN, true);
-        vTaskDelay(pdMS_TO_TICKS(250));
+        vTaskDelay(pdMS_TO_TICKS(5000));
         gpio_put(LED_GREEN_PIN, false);
-        vTaskDelay(pdMS_TO_TICKS(1223));
+        
+        // CICLO AMARELO
+        gpio_put(LED_GREEN_PIN, true);
+        gpio_put(LED_RED_PIN, true);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        gpio_put(LED_GREEN_PIN, false);
+        gpio_put(LED_RED_PIN, false);
+        
+        // CICLO VERMELHO
+        gpio_put(LED_RED_PIN, true);
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        gpio_put(LED_RED_PIN, false);
+        
     }
 }
 
-void vBlinkLed2Task() {
-    gpio_init(LED_BLUE_PIN);
-    gpio_set_dir(LED_BLUE_PIN, GPIO_OUT);
+void vBuzzer2Task() {
+    gpio_init(BUZZER_PIN); 
+    gpio_set_dir(BUZZER_PIN, GPIO_OUT);
+
     while (true) {
-        gpio_put(LED_BLUE_PIN, true);
-        vTaskDelay(pdMS_TO_TICKS(500));
-        gpio_put(LED_BLUE_PIN, false);
-        vTaskDelay(pdMS_TO_TICKS(2224));
+        gpio_put(BUZZER_PIN, true);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        gpio_put(BUZZER_PIN, false);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -101,17 +120,22 @@ void buttons_irq(uint gpio, uint32_t events) {
     }
 }
 
+void setup_button(uint pin) {
+    gpio_init(pin);
+    gpio_set_dir(pin, GPIO_IN);
+    gpio_pull_up(pin);
+    gpio_set_irq_enabled_with_callback(pin, GPIO_IRQ_EDGE_FALL, true, &buttons_irq);
+}
+
 int main() {
-    gpio_init(BUTTON_B);
-    gpio_set_dir(BUTTON_B, GPIO_IN);
-    gpio_pull_up(BUTTON_B);
-    gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &buttons_irq);
+    setup_button(BUTTON_A);
+    setup_button(BUTTON_B);
 
     stdio_init_all();
 
-    xTaskCreate(vBlinkLed1Task, "Blink Task Led1", configMINIMAL_STACK_SIZE,
+    xTaskCreate(vLeds1Task, "Leds Task", configMINIMAL_STACK_SIZE,
          NULL, tskIDLE_PRIORITY, NULL);
-    xTaskCreate(vBlinkLed2Task, "Blink Task Led2", configMINIMAL_STACK_SIZE, 
+    xTaskCreate(vBuzzer2Task, "Buzzer Task", configMINIMAL_STACK_SIZE, 
         NULL, tskIDLE_PRIORITY, NULL);
     xTaskCreate(vDisplay3Task, "Cont Task Disp3", configMINIMAL_STACK_SIZE, 
         NULL, tskIDLE_PRIORITY, NULL);
