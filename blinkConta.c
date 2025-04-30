@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "lib/ssd1306.h"
@@ -6,34 +8,42 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
-#include <stdio.h>
 
 #define I2C_PORT i2c1
 #define I2C_SDA 14
 #define I2C_SCL 15
 #define endereco 0x3C
 
-#define led1 11
-#define led2 12
+#define LED_RED_PIN 13
+#define LED_BLUE_PIN 12
+#define LED_GREEN_PIN 11
+
+#define BUTTON_A 5
+#define BUTTON_B 6
+#define DEBOUNCE_TIME 200000        // Tempo para debounce em ms
+static uint32_t last_time_A = 0;    // Tempo da última interrupção do botão A
+static uint32_t last_time_B = 0;    // Tempo da última interrupção do botão B
+
+bool night_mode = false;
 
 void vBlinkLed1Task() {
-    gpio_init(led1);
-    gpio_set_dir(led1, GPIO_OUT);
+    gpio_init(LED_GREEN_PIN);
+    gpio_set_dir(LED_GREEN_PIN, GPIO_OUT);
     while (true) {
-        gpio_put(led1, true);
+        gpio_put(LED_GREEN_PIN, true);
         vTaskDelay(pdMS_TO_TICKS(250));
-        gpio_put(led1, false);
+        gpio_put(LED_GREEN_PIN, false);
         vTaskDelay(pdMS_TO_TICKS(1223));
     }
 }
 
 void vBlinkLed2Task() {
-    gpio_init(led2);
-    gpio_set_dir(led2, GPIO_OUT);
+    gpio_init(LED_BLUE_PIN);
+    gpio_set_dir(LED_BLUE_PIN, GPIO_OUT);
     while (true) {
-        gpio_put(led2, true);
+        gpio_put(LED_BLUE_PIN, true);
         vTaskDelay(pdMS_TO_TICKS(500));
-        gpio_put(led2, false);
+        gpio_put(LED_BLUE_PIN, false);
         vTaskDelay(pdMS_TO_TICKS(2224));
     }
 }
@@ -74,20 +84,28 @@ void vDisplay3Task() {
     }
 }
 
-// Trecho para modo BOOTSEL com botão B
-#include "pico/bootrom.h"
-#define botaoB 6
-void gpio_irq_handler(uint gpio, uint32_t events) {
-    reset_usb_boot(0, 0);
+void buttons_irq(uint gpio, uint32_t events) {
+    uint32_t current_time = to_us_since_boot(get_absolute_time());
+    if (gpio == BUTTON_A) {
+        if (current_time - last_time_A > DEBOUNCE_TIME) {
+          night_mode = !night_mode;
+          return;
+        }
+    } 
+    else if (gpio == BUTTON_B) {
+        if (current_time - last_time_B > DEBOUNCE_TIME) {
+            reset_usb_boot(0, 0);
+            last_time_B = current_time;
+            return;
+          }
+    }
 }
 
 int main() {
-    // Para ser utilizado o modo BOOTSEL com botão B
-    gpio_init(botaoB);
-    gpio_set_dir(botaoB, GPIO_IN);
-    gpio_pull_up(botaoB);
-    gpio_set_irq_enabled_with_callback(botaoB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
-    // Fim do trecho para modo BOOTSEL com botão B
+    gpio_init(BUTTON_B);
+    gpio_set_dir(BUTTON_B, GPIO_IN);
+    gpio_pull_up(BUTTON_B);
+    gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &buttons_irq);
 
     stdio_init_all();
 
