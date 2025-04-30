@@ -25,49 +25,65 @@
 static uint32_t last_time_A = 0;    // Tempo da última interrupção do botão A
 static uint32_t last_time_B = 0;    // Tempo da última interrupção do botão B
 
+#define TIME 5                      // Tempo para cada sinal em segundos
+
 bool night_mode = false;
 
-void vLeds1Task() {
+void vLedsTask() {
     gpio_init(LED_RED_PIN);
     gpio_set_dir(LED_RED_PIN, GPIO_OUT);
 
     gpio_init(LED_GREEN_PIN);
     gpio_set_dir(LED_GREEN_PIN, GPIO_OUT);
 
-    while (true) {
-        // CICLO VERDE
-        gpio_put(LED_GREEN_PIN, true);
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        gpio_put(LED_GREEN_PIN, false);
-        
-        // CICLO AMARELO
-        gpio_put(LED_GREEN_PIN, true);
-        gpio_put(LED_RED_PIN, true);
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        gpio_put(LED_GREEN_PIN, false);
-        gpio_put(LED_RED_PIN, false);
-        
-        // CICLO VERMELHO
-        gpio_put(LED_RED_PIN, true);
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        gpio_put(LED_RED_PIN, false);
-        
-    }
-}
-
-void vBuzzer2Task() {
     gpio_init(BUZZER_PIN); 
     gpio_set_dir(BUZZER_PIN, GPIO_OUT);
+    gpio_put(BUZZER_PIN, 0);
 
     while (true) {
-        gpio_put(BUZZER_PIN, true);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        gpio_put(BUZZER_PIN, false);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // Sinal verde
+        gpio_put(LED_GREEN_PIN, true);
+        for (int i = 0; i < TIME; i++) {
+            gpio_put(BUZZER_PIN, true);
+            vTaskDelay(pdMS_TO_TICKS(500));
+            gpio_put(BUZZER_PIN, false);
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+        gpio_put(LED_GREEN_PIN, false);
+        
+        // Sinal amarelo
+        gpio_put(LED_GREEN_PIN, 1);
+        gpio_put(LED_RED_PIN, 1);
+        for (int i = 0; i < TIME*2; i++) {
+            gpio_put(BUZZER_PIN, true);
+            vTaskDelay(pdMS_TO_TICKS(250));
+            gpio_put(BUZZER_PIN, false);
+            vTaskDelay(pdMS_TO_TICKS(250));
+        }
+        gpio_put(LED_GREEN_PIN, false);
+        gpio_put(LED_RED_PIN, false);
+        
+        // Sinal vermelho
+        gpio_put(LED_RED_PIN, true);
+        for (int i = 0; i < TIME-2; i++){
+            gpio_put(BUZZER_PIN, true);
+            vTaskDelay(pdMS_TO_TICKS(500));
+            gpio_put(BUZZER_PIN, false);
+            vTaskDelay(pdMS_TO_TICKS(1500));
+        }
+        gpio_put(LED_RED_PIN, false);
     }
 }
 
-void vDisplay3Task() {
+void vMatrixTask() {
+    // configura
+
+    while (true) {
+        // roda
+    }
+}
+
+void vDisplayTask() {
     // I2C Initialisation. Using it at 400Khz.
     i2c_init(I2C_PORT, 400 * 1000);
 
@@ -133,11 +149,11 @@ int main() {
 
     stdio_init_all();
 
-    xTaskCreate(vLeds1Task, "Leds Task", configMINIMAL_STACK_SIZE,
+    xTaskCreate(vLedsTask, "Leds Task", configMINIMAL_STACK_SIZE,
          NULL, tskIDLE_PRIORITY, NULL);
-    xTaskCreate(vBuzzer2Task, "Buzzer Task", configMINIMAL_STACK_SIZE, 
+    xTaskCreate(vMatrixTask, "Matrix Task", configMINIMAL_STACK_SIZE, 
         NULL, tskIDLE_PRIORITY, NULL);
-    xTaskCreate(vDisplay3Task, "Cont Task Disp3", configMINIMAL_STACK_SIZE, 
+    xTaskCreate(vDisplayTask, "Display Task", configMINIMAL_STACK_SIZE, 
         NULL, tskIDLE_PRIORITY, NULL);
     vTaskStartScheduler();
     panic_unsupported();
