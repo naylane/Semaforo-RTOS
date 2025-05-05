@@ -33,6 +33,7 @@ static uint32_t last_time_B = 0;    // Tempo da última interrupção do botão 
 #define TIME 10                      // Tempo para cada sinal em segundos
 
 bool night_mode = false;
+bool button_a_pressed = false;
 
 void vLedsTask() {
     gpio_init(LED_RED_PIN);
@@ -45,18 +46,13 @@ void vLedsTask() {
     gpio_set_dir(BUZZER_PIN, GPIO_OUT);
     gpio_put(BUZZER_PIN, 0);
 
-    bool local_night_mode;
-
     while (true) {
-        // Desativa interrupções e copia o valor de night_mode
-        taskENTER_CRITICAL();
-        local_night_mode = night_mode;
-        taskEXIT_CRITICAL();
-
-        if (local_night_mode) {
+        if (night_mode) {
+            // MODO NOTURNO
             gpio_put(LED_GREEN_PIN, 1);
             gpio_put(LED_RED_PIN, 1);
             for (int i = 0; i < TIME-2; i++) {
+                if (!night_mode) break;
                 //gpio_put(BUZZER_PIN, true);
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 //gpio_put(BUZZER_PIN, false);
@@ -72,9 +68,12 @@ void vLedsTask() {
                 vTaskDelay(pdMS_TO_TICKS(500));
                 //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(500));
+                if (night_mode) break;
             }
             gpio_put(LED_GREEN_PIN, false);
-            
+
+            if (night_mode) continue;
+
             // Sinal amarelo
             gpio_put(LED_GREEN_PIN, 1);
             gpio_put(LED_RED_PIN, 1);
@@ -83,10 +82,13 @@ void vLedsTask() {
                 vTaskDelay(pdMS_TO_TICKS(250));
                 //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(250));
+                if (night_mode) break;
             }
             gpio_put(LED_GREEN_PIN, false);
             gpio_put(LED_RED_PIN, false);
-            
+
+            if (night_mode) continue;
+
             // Sinal vermelho
             gpio_put(LED_RED_PIN, true);
             for (int i = 0; i < TIME/2; i++){
@@ -94,6 +96,7 @@ void vLedsTask() {
                 vTaskDelay(pdMS_TO_TICKS(500));
                 //gpio_put(BUZZER_PIN, false);
                 vTaskDelay(pdMS_TO_TICKS(1500));
+                if (night_mode) break;
             }
             gpio_put(LED_RED_PIN, false);
         }   
@@ -108,26 +111,21 @@ void vMatrixTask() {
     pio_matrix_program_init(pio, sm, offset, WS2812_PIN);
     clear_matrix(pio, sm);
 
-    bool local_night_mode;
     int count = 0;
 
     sleep_ms(100);
     while (true) {
-        // Desativa interrupções e copia o valor de night_mode
-        taskENTER_CRITICAL();
-        local_night_mode = night_mode;
-        taskEXIT_CRITICAL();
-        
-        if (local_night_mode) {
-            clear_matrix(pio, sm);
+        if (night_mode) {
+            count = 0;
+            set_pattern(pio, sm, 10, "amarelo");
         } else {
+            set_pattern(pio, sm, count, "cinza");
+            count++;
             if (count >= 10) {
                 count = 0;
             }
-            set_pattern(pio, sm, count, "cinza");
-            count++;
         }
-        sleep_ms(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -159,11 +157,24 @@ void vDisplayTask() {
     }
 }
 
+void vButtonTask() {
+    while (true) {
+        if (button_a_pressed) {
+            taskENTER_CRITICAL();
+            night_mode = !night_mode;
+            taskEXIT_CRITICAL();
+            button_a_pressed = false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100)); // para evitar polling excessivo
+    }
+}
+
 void buttons_irq(uint gpio, uint32_t events) {
     uint32_t current_time = to_us_since_boot(get_absolute_time());
     if (gpio == BUTTON_A) {
         if (current_time - last_time_A > DEBOUNCE_TIME) {
-          night_mode = !night_mode;
+            button_a_pressed = !button_a_pressed;
+            last_time_A = current_time;
           return;
         }
     } 
@@ -172,7 +183,7 @@ void buttons_irq(uint gpio, uint32_t events) {
             reset_usb_boot(0, 0);
             last_time_B = current_time;
             return;
-          }
+        }
     }
 }
 
@@ -194,6 +205,8 @@ int main() {
     xTaskCreate(vMatrixTask, "Matrix Task", configMINIMAL_STACK_SIZE, 
         NULL, tskIDLE_PRIORITY, NULL);
     xTaskCreate(vDisplayTask, "Display Task", configMINIMAL_STACK_SIZE, 
+        NULL, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(vButtonTask, "Button Task", configMINIMAL_STACK_SIZE, 
         NULL, tskIDLE_PRIORITY, NULL);
     vTaskStartScheduler();
     panic_unsupported();
