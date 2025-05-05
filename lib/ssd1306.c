@@ -198,3 +198,74 @@ void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y)
     }
   }
 }
+
+// Desenha um círculo oco usando o algoritmo de Bresenhem
+void ssd1306_draw_circle(ssd1306_t *ssd, uint8_t par_x, uint8_t par_y, uint8_t par_r, bool par_color) {
+  int32_t x = -par_r;
+  int32_t y = 0;
+  int32_t err = 2 - 2 * par_r;
+  int32_t e2;
+
+  if (par_x >= WIDTH || par_y >= HEIGHT) {
+      return;
+  }
+
+  do {
+      ssd1306_pixel(ssd, par_x - x, par_y + y, par_color);
+      ssd1306_pixel(ssd, par_x + x, par_y + y, par_color);
+      ssd1306_pixel(ssd, par_x + x, par_y - y, par_color);
+      ssd1306_pixel(ssd, par_x - x, par_y - y, par_color);
+      e2 = err;
+
+      if (e2 <= y) {
+          y++;
+          err = err + (y * 2 + 1);
+          if(-x == y && e2 <= x) {
+              e2 = 0;
+          }
+      }
+
+      if (e2 > x) {
+          x++;
+          err = err + (x * 2 + 1);
+      }
+  } while (x <= 0);
+
+  return;
+}
+
+// Desenha um circulo preenchido usando o algoritmo de Bresenhem
+void ssd1306_fill_circle(ssd1306_t *ssd, uint8_t par_x, uint8_t par_y, uint8_t par_r, bool par_color) {
+  int32_t x = -par_r;
+  int32_t y = 0;
+  int32_t err = 2 - 2 * par_r;
+  int32_t e2;
+
+  if (par_x >= WIDTH || par_y >= WIDTH) {
+      return;
+  }
+
+  do {
+      for (uint8_t _y = (par_y + y); _y >= (par_y - y); _y--) {
+          for (uint8_t _x = (par_x - x); _x >= (par_x + x); _x--) {
+              ssd1306_pixel(ssd, _x, _y, par_color);
+          }
+      }
+
+      e2 = err;
+      if (e2 <= y) {
+          y++;
+          err = err + (y * 2 + 1);
+          if (-x == y && e2 <= x) {
+              e2 = 0;
+          }
+      }
+
+      if (e2 > x) {
+          x++;
+          err = err + (x * 2 + 1);
+      }
+  } while (x <= 0);
+
+  return;
+}

@@ -152,6 +152,13 @@ void vDisplayTask() {
         ssd1306_line(&ssd, 3, 20, 123, 20, cor);           // Desenha uma linha
         ssd1306_draw_string(&ssd, "   SEMAFORO", 8, 6);
         ssd1306_rect(&ssd, 95, 15, 100, 20, cor, !cor);    // Desenha um retângulo
+        ssd1306_draw_circle(&ssd, 30, 40, 5, cor);          // Desenha um círculo
+        ssd1306_draw_circle(&ssd, 100, 40, 5, cor);         // Desenha um círculo
+        if (night_mode) {
+            ssd1306_fill_circle(&ssd, 65, 40, 5, cor);      // Desenha um círculo preenchido
+        } else {
+            ssd1306_draw_circle(&ssd, 65, 40, 5, cor);      // Desenha um círculo
+        }
         ssd1306_send_data(&ssd);                           // Atualiza o display
         sleep_ms(735);
     }
