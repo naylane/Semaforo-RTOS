@@ -9,15 +9,11 @@
 <br>
 
 ## Sobre o projeto
-Sobre o projeto. A descrição completa do projeto pode ser encontrada na **[Ficha de proposta de projeto](docs\TrabalhoSE_FSA_3_Naylane_Ribeiro.pdf)**.
-
-<div align="center"> <img src="./img\img0.jpg" width="30%">
-<p><em>Figura 1: Projeto na BitDogLaB</em></p> </div>
-
+O projeto pretende simular o funcionamento de um semáforo inteligente com recursos adicionais, como **modo noturno**, **alertas sonoros para acessibilidade** e **exibição de informações visuais** em um display OLED e matriz de LEDs. A descrição completa do projeto pode ser encontrada na **[Ficha de proposta de projeto](docs\TrabalhoSE_FSA_3_Naylane_Ribeiro.pdf)**.
 
 ## Tecnologias e Ferramentas utilizadas
 - **Kit BitDogLab**
-- **Adicionais**: Protoboard, jumpers (MxM e MxF) e resistores (1/4W)
+- **FreeRTOS**
 - **Linguagem de programação:** C
 - **Ambiente de Desenvolvimento:** Visual Studio Code
 
@@ -37,13 +33,6 @@ cmake ..
 make 
 ```
 4. Coloque a BitDogLab em modo BOOTSEL (pressione o botão BOOTSEL ao conectar o cabo USB).
-
-### ⚠️ Observação:
-Para simular o projeto no Wokwi é necessário atribuir valores para o ADC manualmente, alterando a variável ```media```.
-<br> <div align="center">
-  <img src="./img\circuito-wokwi.png" alt="Circuito no Wokwi" width="60%">
-  <p><em>Figura 2: Circuito simulado no Wokwi</em></p>
-</div>
 
 
 ## Desenvolvedora
