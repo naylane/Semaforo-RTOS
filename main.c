@@ -30,7 +30,7 @@
 static uint32_t last_time_A = 0;    // Tempo da última interrupção do botão A
 static uint32_t last_time_B = 0;    // Tempo da última interrupção do botão B
 
-#define TIME 10                      // Tempo para cada sinal em segundos
+#define TIME 10                     // Tempo para cada sinal em segundos
 
 bool night_mode = false;
 bool button_a_pressed = false;
@@ -48,29 +48,29 @@ void vLedsTask() {
 
     while (true) {
         if (night_mode) {
-            // MODO NOTURNO
-            gpio_put(LED_GREEN_PIN, 1);
-            gpio_put(LED_RED_PIN, 1);
-            for (int i = 0; i < TIME-2; i++) {
+            // Modo noturno
+            for (int i = 0; i < TIME-3; i++) {
                 if (!night_mode) break;
-                //gpio_put(BUZZER_PIN, true);
+                gpio_put(LED_GREEN_PIN, 1);
+                gpio_put(LED_RED_PIN, 1);
+                gpio_put(BUZZER_PIN, 1);
                 vTaskDelay(pdMS_TO_TICKS(1000));
-                //gpio_put(BUZZER_PIN, false);
-                vTaskDelay(pdMS_TO_TICKS(1000));
+                gpio_put(LED_GREEN_PIN, 0);
+                gpio_put(LED_RED_PIN, 0);
+                gpio_put(BUZZER_PIN, 0);
+                vTaskDelay(pdMS_TO_TICKS(2000));
             }
-            gpio_put(LED_GREEN_PIN, false);
-            gpio_put(LED_RED_PIN, false);
         } else {
             // Sinal verde
-            gpio_put(LED_GREEN_PIN, true);
+            gpio_put(LED_GREEN_PIN, 1);
             for (int i = 0; i < TIME; i++) {
-                //gpio_put(BUZZER_PIN, true);
+                gpio_put(BUZZER_PIN, 1);
                 vTaskDelay(pdMS_TO_TICKS(500));
-                //gpio_put(BUZZER_PIN, false);
+                gpio_put(BUZZER_PIN, 0);
                 vTaskDelay(pdMS_TO_TICKS(500));
                 if (night_mode) break;
             }
-            gpio_put(LED_GREEN_PIN, false);
+            gpio_put(LED_GREEN_PIN, 0);
 
             if (night_mode) continue;
 
@@ -78,27 +78,27 @@ void vLedsTask() {
             gpio_put(LED_GREEN_PIN, 1);
             gpio_put(LED_RED_PIN, 1);
             for (int i = 0; i < TIME*2; i++) {
-                //gpio_put(BUZZER_PIN, true);
+                gpio_put(BUZZER_PIN, 1);
                 vTaskDelay(pdMS_TO_TICKS(250));
-                //gpio_put(BUZZER_PIN, false);
+                gpio_put(BUZZER_PIN, 0);
                 vTaskDelay(pdMS_TO_TICKS(250));
                 if (night_mode) break;
             }
-            gpio_put(LED_GREEN_PIN, false);
-            gpio_put(LED_RED_PIN, false);
+            gpio_put(LED_GREEN_PIN, 0);
+            gpio_put(LED_RED_PIN, 0);
 
             if (night_mode) continue;
 
             // Sinal vermelho
-            gpio_put(LED_RED_PIN, true);
+            gpio_put(LED_RED_PIN, 1);
             for (int i = 0; i < TIME/2; i++){
-                //gpio_put(BUZZER_PIN, true);
+                gpio_put(BUZZER_PIN, 1);
                 vTaskDelay(pdMS_TO_TICKS(500));
-                //gpio_put(BUZZER_PIN, false);
+                gpio_put(BUZZER_PIN, 0);
                 vTaskDelay(pdMS_TO_TICKS(1500));
                 if (night_mode) break;
             }
-            gpio_put(LED_RED_PIN, false);
+            gpio_put(LED_RED_PIN, 0);
         }   
     }
 }
@@ -159,7 +159,7 @@ void vDisplayTask() {
         } else {
             ssd1306_draw_circle(&ssd, 65, 40, 5, cor);      // Desenha um círculo
         }
-        ssd1306_send_data(&ssd);                           // Atualiza o display
+        ssd1306_send_data(&ssd);                            // Atualiza o display
         sleep_ms(735);
     }
 }
